@@ -3,6 +3,7 @@ const fs = require("fs");
 const bodyParser = require("body-parser");
 const { exec } = require("child_process");
 const cors = require("cors");
+const { checkPythonCode } = require("./checkCode/python/pyCheck");
 //const redis = require('redis');
 
 const app = express();
@@ -17,28 +18,14 @@ app.use(
 );
 //const redisClient = redis.createClient();
 
-function isValidPython(code) {
-  const pythonCodeRegex = /^[a-zA-Z0-9\s\+\-\*\/%=\(\),;\[\]\{\}_]+$/;
-
-  return pythonCodeRegex.test(code);
-}
-
-app.post("/execute", (req, res) => {
+app.post("/execute/python", (req, res) => {
   console.log("i get the code ");
   console.dir(req.body, { depth: null });
   const pythonCode = req.body.code;
-
-  //redisClient.get(pythonCode, (err, cachedResult) => {
-  // if (err) {
-  // console.error('Redis error:', err);
-  // }
-
-  // if (cachedResult) {
-
-  //  res.json({ output: cachedResult });
-  //   }
-  //  else {
-
+  const checkCodeOutput = checkPythonCode(pythonCode);
+  if (checkCodeOutput.error) {
+    return res.status(400).json(checkCodeOutput);
+  }
   const scriptPath = "./script.py";
   fs.writeFileSync(scriptPath, pythonCode);
 

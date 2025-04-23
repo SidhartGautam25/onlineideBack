@@ -1,3 +1,3 @@
-for x in range(1,10):
+fruits = ["modiji", "hindu", "muslim"]
+for x in fruits:
   print(x)
-print("hello world")

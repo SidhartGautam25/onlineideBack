@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const { exec } = require("child_process");
 const cors = require("cors");
 const { checkPythonCode } = require("./checkCode/python/pyCheck");
+const { dCommand } = require("./dCommand/dCommand");
 //const redis = require('redis');
 
 const app = express();
@@ -32,7 +33,8 @@ app.post("/execute/python", (req, res) => {
   const currentDirectory = __dirname;
   console.log(currentDirectory);
 
-  const command = `docker run --rm  --cpus 0.5 --memory 256M --network none --read-only --pids-limit 50 -v ${currentDirectory}:/app python:latest python /app/${scriptPath}`;
+  // const command = `docker run --rm  --cpus 0.5 --memory 256M --network none --read-only --pids-limit 50 -v ${currentDirectory}:/app python:latest python /app/${scriptPath}`;
+  const command = dCommand(currentDirectory, scriptPath);
   const time = 3000;
 
   const program = exec(command, { timeout: time }, (error, stdout, stderr) => {

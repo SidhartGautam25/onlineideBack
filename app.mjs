@@ -4,6 +4,7 @@ import cors from "cors";
 import { exec } from "child_process";
 import { checkPythonCode } from "./checkCode/python/pyCheck.js";
 import { dCommand } from "./dCommand/dCommand.mjs";
+import { safeDelete } from "./fileHandling/filecleaning.mjs";
 
 //const redis = require('redis');
 
@@ -68,7 +69,9 @@ app.post("/execute", (req, res) => {
     { timeout: time },
     (error, stdout, stderr) => {
       // Clean up temp dir
-      fs.rmSync(obj.tempDir, { recursive: true, force: true });
+      // this is syncronous
+      // fs.rmSync(obj.tempDir, { recursive: true, force: true });
+      safeDelete(obj.tempDir);
 
       if (error) {
         console.error("Execution error:", error);

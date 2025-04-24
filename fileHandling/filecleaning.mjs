@@ -1,5 +1,5 @@
 import fs from "fs";
-import logger from "../logger.js"; // adjust path as needed
+// import logger from "../logger.js"; // adjust path as needed
 
 export function safeDelete(filePath) {
   fs.rm(
@@ -12,9 +12,9 @@ export function safeDelete(filePath) {
     },
     (err) => {
       if (err) {
-        logger.error(`❌ Failed to delete ${filePath}: ${err.message}`);
+        console.error(`Failed to delete ${filePath}: ${err.message}`);
       } else {
-        logger.info(`✅ Deleted ${filePath}`);
+        console.log(`Deleted ${filePath}`);
       }
     }
   );

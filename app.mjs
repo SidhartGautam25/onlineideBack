@@ -4,6 +4,10 @@ import cors from "cors";
 import { exec } from "child_process";
 import { checkPythonCode } from "./checkCode/python/pyCheck.js";
 import { dCommand } from "./dCommand/dCommand.mjs";
+import { safeDelete } from "./fileHandling/filecleaning.mjs";
+import { codeQueue } from "./queues/codeQueue.mjs";
+import { v4 as uuidv4 } from "uuid";
+// import { Job } from "bullmq";
 
 //const redis = require('redis');
 
@@ -19,7 +23,7 @@ app.use(
 );
 //const redisClient = redis.createClient();
 
-app.post("/execute", (req, res) => {
+app.post("/execute_1", (req, res) => {
   console.log("i get the code ");
   console.dir(req.body, { depth: null });
   const pythonCode = req.body.code;
@@ -68,7 +72,9 @@ app.post("/execute", (req, res) => {
     { timeout: time },
     (error, stdout, stderr) => {
       // Clean up temp dir
-      fs.rmSync(obj.tempDir, { recursive: true, force: true });
+      // this is syncronous
+      // fs.rmSync(obj.tempDir, { recursive: true, force: true });
+      safeDelete(obj.tempDir);
 
       if (error) {
         console.error("Execution error:", error);
@@ -103,4 +109,33 @@ app.post("/execute", (req, res) => {
 app.listen(PORT, () => {
   // console.log(__dirname);
   console.log(`Server is running on port ${PORT}`);
+});
+
+app.post("/execute", async (req, res) => {
+  const code = req.body.code;
+  const checkCodeOutput = checkPythonCode(code);
+  if (checkCodeOutput.error) {
+    return res.status(400).json(checkCodeOutput);
+  }
+
+  const jobId = uuidv4();
+
+  try {
+    await codeQueue.add("executePython", { code }, { jobId });
+    res.status(202).json({ jobId });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to enqueue job" });
+  }
+});
+
+app.get("/status/:id", async (req, res) => {
+  const { id } = req.params;
+  const job = await codeQueue.getJob(id);
+
+  if (!job) return res.status(404).json({ error: "Job not found" });
+
+  const state = await job.getState();
+  const result = job.returnvalue;
+
+  res.json({ state, result });
 });

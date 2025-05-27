@@ -16,6 +16,7 @@ const connection = {
 const worker = new Worker(
   "codeQueue",
   async (job) => {
+    console.log("job.data is ", job.data);
     const { code } = job.data;
     const { command, tempDir } = dCommand(code);
 

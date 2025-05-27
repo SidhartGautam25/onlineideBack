@@ -2,11 +2,13 @@ import express from "express";
 import fs from "fs";
 import cors from "cors";
 import { exec } from "child_process";
-import { checkPythonCode } from "./checkCode/python/pyCheck.js";
+import { checkPythonCode } from "./checkCode/python/pyCheck.mjs";
 import { dCommand } from "./dCommand/dCommand.mjs";
 import { safeDelete } from "./fileHandling/filecleaning.mjs";
 import { codeQueue } from "./queues/codeQueue.mjs";
 import { v4 as uuidv4 } from "uuid";
+import pyThingsRoute from "./routes/v1/python.mjs";
+import problemRoutes from "./routes/v1/problems.mjs";
 // import { Job } from "bullmq";
 
 //const redis = require('redis');
@@ -17,10 +19,14 @@ const PORT = 5000;
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:5173", "http://localhost:3000"],
     credentials: true,
   })
 );
+app.use((req, res, next) => {
+  console.log("requets is coming to the server");
+  next();
+});
 //const redisClient = redis.createClient();
 
 app.post("/execute_1", (req, res) => {
@@ -112,6 +118,7 @@ app.listen(PORT, () => {
 });
 
 app.post("/execute", async (req, res) => {
+  console.log("execute controller");
   const code = req.body.code;
   const checkCodeOutput = checkPythonCode(code);
   if (checkCodeOutput.error) {
@@ -121,9 +128,12 @@ app.post("/execute", async (req, res) => {
   const jobId = uuidv4();
 
   try {
+    console.log("adding job to codeQueue");
     await codeQueue.add("executePython", { code }, { jobId });
+    console.log("job added");
     res.status(202).json({ jobId });
   } catch (err) {
+    console.log("error occured in between");
     res.status(500).json({ error: "Failed to enqueue job" });
   }
 });
@@ -139,3 +149,6 @@ app.get("/status/:id", async (req, res) => {
 
   res.json({ state, result });
 });
+
+app.use("/v1/py/execute", pyThingsRoute);
+app.use("/v1/problems", problemRoutes);
